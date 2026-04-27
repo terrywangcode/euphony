@@ -1,6 +1,7 @@
 [project]
 name = "euphony"
 version = "0.1.0"
+requires-python = ">=3.9"
 # Main dependencies for the euphony FastAPI server.
 dependencies = [
   "fastapi",
@@ -9,7 +10,9 @@ dependencies = [
   "openai",
   "pydantic",
   "jmespath",
-  "openai-harmony",
+  # Pin to the latest prebuilt wheel that installs cleanly without a local Rust
+  # toolchain in our supported dev setup.
+  "openai-harmony==0.0.4",
 ]
 
 
