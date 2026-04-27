@@ -49,6 +49,18 @@ There are two ways you can use Euphony.
 
 ### Use [Euphony](https://openai.github.io/euphony/) to View My Data
 
+The main viewer lets you load JSON or JSONL data and inspect rendered Harmony
+conversations or Codex sessions in one place.
+
+<p align="center">
+  <img
+    src="./public/readme-euphony-index-screenshot.png"
+    alt="Euphony viewer page showing the main toolbar, URL loading controls, and a rendered Codex session."
+    width="940"
+  />
+</p>
+<p align="center"><em>Main Euphony viewer rendering a local Codex session from the URL loader.</em></p>
+
 1. Load data from one of the supported sources:
    1. Paste JSON or JSONL from the clipboard
    2. Choose a local `.json` or `.jsonl` file
@@ -61,8 +73,20 @@ There are two ways you can use Euphony.
 
 ### Browse Local Codex Sessions
 
-When you run the local backend, Euphony also exposes a dedicated sessions page
-at `/sessions.html`.
+The sessions browser complements the main viewer with a dedicated local-history
+search surface for Codex activity.
+
+When you run the local backend, Euphony also exposes this sessions page at
+`/sessions.html`.
+
+<p align="center">
+  <img
+    src="./public/readme-codex-sessions-screenshot.png"
+    alt="Codex Sessions page showing local session filters, full-text search controls, and the Open Euphony Viewer action."
+    width="1204"
+  />
+</p>
+<p align="center"><em>Codex Sessions page for browsing, filtering, and opening local session logs.</em></p>
 
 The sessions page can:
 
