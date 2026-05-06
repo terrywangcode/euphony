@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 DIST_DIR = Path(__file__).resolve().parents[1] / "dist"
+GITHUB_PAGES_BASE_PATH = "euphony"
 HARMONY_RENDERER_NAME = "o200k_harmony"
 CODEX_SESSION_FILE_MEDIA_TYPE = "application/x-ndjson"
 CODEX_SESSION_SEARCH_INDEX_FILE_NAME = "euphony-codex-sessions.sqlite3"
@@ -185,7 +186,18 @@ class CodexSessionSearchDocument:
 
 
 def _resolve_frontend_path(path_fragment: str) -> Path:
-    candidate = (DIST_DIR / path_fragment).resolve()
+    # GitHub Pages builds include `/euphony/` in asset URLs. The local backend
+    # serves the same `dist/` folder at `/`, so strip that deployment prefix
+    # before resolving files to keep locally served GitHub builds usable.
+    normalized_path_fragment = path_fragment.lstrip("/")
+    if normalized_path_fragment == GITHUB_PAGES_BASE_PATH:
+        normalized_path_fragment = ""
+    elif normalized_path_fragment.startswith(f"{GITHUB_PAGES_BASE_PATH}/"):
+        normalized_path_fragment = normalized_path_fragment[
+            len(GITHUB_PAGES_BASE_PATH) + 1 :
+        ]
+
+    candidate = (DIST_DIR / normalized_path_fragment).resolve()
     try:
         candidate.relative_to(DIST_DIR.resolve())
     except ValueError as exc:

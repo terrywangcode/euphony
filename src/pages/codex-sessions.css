@@ -144,6 +144,7 @@
   color: white;
 }
 
+.secondary-link,
 .secondary-button {
   min-height: 46px;
   padding: 0 18px;
@@ -162,6 +163,7 @@
   text-decoration: none;
 }
 
+.secondary-link:hover,
 .secondary-button:hover {
   background: var(--page-hover-surface);
 }

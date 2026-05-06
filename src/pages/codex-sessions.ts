@@ -32,6 +32,8 @@ type CodexSessionSearchMode = 'exact' | 'fuzzy' | 'full_text';
 const DEFAULT_ITEMS_PER_PAGE = 25;
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 const DEFAULT_SEARCH_MODE: CodexSessionSearchMode = 'full_text';
+const DEMO_QUERY_PARAM = 'demo';
+const DEMO_SESSIONS_INDEX_URL = './examples/codex-sessions-demo-index.json';
 
 @customElement('euphony-codex-sessions-page')
 export class EuphonyCodexSessionsPage extends LitElement {
@@ -112,6 +114,10 @@ export class EuphonyCodexSessionsPage extends LitElement {
     return this.appliedSearchQuery.trim() !== '';
   }
 
+  private get isDemoMode() {
+    return new URLSearchParams(window.location.search).get(DEMO_QUERY_PARAM) === '1';
+  }
+
   private normalizeSearchMode(
     rawValue: string | null
   ): CodexSessionSearchMode {
@@ -159,6 +165,9 @@ export class EuphonyCodexSessionsPage extends LitElement {
 
   private updateURL() {
     const params = new URLSearchParams();
+    if (this.isDemoMode) {
+      params.set(DEMO_QUERY_PARAM, '1');
+    }
     params.set('page', this.curPage.toString());
     params.set('limit', this.itemsPerPage.toString());
 
@@ -195,11 +204,74 @@ export class EuphonyCodexSessionsPage extends LitElement {
     return `Request failed with status ${response.status}.`;
   }
 
+  private normalizeForSearch(value: string | null) {
+    return (value ?? '').toLowerCase();
+  }
+
+  private sessionMatchesDemoFilters(session: CodexSessionSummary) {
+    const firstPrompt = this.normalizeForSearch(session.first_prompt);
+    const lastPrompt = this.normalizeForSearch(session.last_prompt);
+    const lastResponse = this.normalizeForSearch(session.last_response);
+    const summaryText = this.normalizeForSearch(
+      [
+        session.session_id,
+        session.file_name,
+        session.relative_path,
+        session.cwd,
+        session.first_prompt,
+        session.last_prompt,
+        session.last_response
+      ].join('\n')
+    );
+
+    return (
+      firstPrompt.includes(
+        this.normalizeForSearch(this.appliedFirstPromptFilter)
+      ) &&
+      lastPrompt.includes(this.normalizeForSearch(this.appliedLastPromptFilter)) &&
+      lastResponse.includes(this.normalizeForSearch(this.appliedResponseFilter)) &&
+      summaryText.includes(this.normalizeForSearch(this.appliedSearchQuery))
+    );
+  }
+
+  private async loadDemoSessions() {
+    const response = await fetch(DEMO_SESSIONS_INDEX_URL);
+    if (!response.ok) {
+      throw new Error(await this.getErrorMessage(response));
+    }
+
+    const payload = (await response.json()) as CodexSessionListResponse;
+    const filteredSessions = payload.data.filter(session =>
+      this.sessionMatchesDemoFilters(session)
+    );
+    const totalPageNum = Math.max(
+      1,
+      Math.ceil(filteredSessions.length / this.itemsPerPage)
+    );
+    if (filteredSessions.length > 0 && this.curPage > totalPageNum) {
+      this.curPage = totalPageNum;
+      this.updateURL();
+    }
+
+    this.sessions = filteredSessions.slice(
+      this.offset,
+      this.offset + this.itemsPerPage
+    );
+    this.totalSessions = payload.data.length;
+    this.matchedSessions = filteredSessions.length;
+    this.updateURL();
+  }
+
   private async loadSessions() {
     this.isLoading = true;
     this.errorMessage = null;
 
     try {
+      if (this.isDemoMode) {
+        await this.loadDemoSessions();
+        return;
+      }
+
       const params = new URLSearchParams();
       params.set('offset', this.offset.toString());
       params.set('limit', this.itemsPerPage.toString());
@@ -256,6 +328,11 @@ export class EuphonyCodexSessionsPage extends LitElement {
   }
 
   private buildSessionFileURL(session: CodexSessionSummary) {
+    if (this.isDemoMode) {
+      return new URL(session.relative_path, new URL('./', window.location.href))
+        .toString();
+    }
+
     const query = new URLSearchParams({
       relative_path: session.relative_path
     });
@@ -364,19 +441,28 @@ export class EuphonyCodexSessionsPage extends LitElement {
           <header class="hero">
             <div class="hero-copy">
               <p class="eyebrow">Local Codex Activity</p>
-              <h1>Codex Sessions</h1>
+              <h1>Codex Sessions${this.isDemoMode ? ' Demo' : ''}</h1>
               <p class="hero-text">
-                Browse JSONL session logs from your local Codex history, filter
-                by prompts or responses, run fuzzy or full-text searches across
-                sessions, and open any match in the main Euphony viewer.
+                ${this.isDemoMode
+                  ? 'Explore a static sample of the Codex sessions browser, filter the demo cards, and open a sample Codex JSONL event stream in the main Euphony viewer.'
+                  : 'Browse JSONL session logs from your local Codex history, filter by prompts or responses, run fuzzy or full-text searches across sessions, and open any match in the main Euphony viewer.'}
               </p>
             </div>
 
             <div class="hero-actions">
               <a class="nav-link primary-link" href="./">Open Euphony Viewer</a>
+              <a
+                class="nav-link secondary-link"
+                href=${this.isDemoMode ? './sessions.html' : './sessions.html?demo=1'}
+              >
+                ${this.isDemoMode ? 'Use local sessions' : 'View demo sessions'}
+              </a>
               <p class="hero-note">
-                Source: <code>~/.codex/sessions</code> or <code>CODEX_HOME</code>
-                when it is configured.
+                ${this.isDemoMode
+                  ? html`Source: static demo data in
+                      <code>public/examples</code>.`
+                  : html`Source: <code>~/.codex/sessions</code> or
+                      <code>CODEX_HOME</code> when it is configured.`}
               </p>
             </div>
           </header>

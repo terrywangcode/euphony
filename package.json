@@ -14,8 +14,6 @@
   },
   "files": [
     "lib",
-    "public/readme-euphony-index-screenshot.png",
-    "public/readme-codex-sessions-screenshot.png",
     "README.md",
     "LICENSE",
     "NOTICE"

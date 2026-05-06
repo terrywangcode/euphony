@@ -7,13 +7,14 @@ Visualize harmony chat conversations and Codex sessions in your browser 🎵
 
 <table>
   <tr>
-    <td colspan="3"><a href="https://openai.github.io/euphony/"><img src='https://github.com/user-attachments/assets/cfdccb43-a63f-4495-8718-63efde8a1a11' width="100%"></a></td>
+    <td colspan="4"><a href="https://openai.github.io/euphony/"><img src='https://github.com/user-attachments/assets/cfdccb43-a63f-4495-8718-63efde8a1a11' width="100%"></a></td>
   </tr>
   <tr></tr>
   <tr>
      <td><a href="https://openai.github.io/euphony/">🎵 Euphony Demo</a></td>
      <td><a href="https://openai.github.io/euphony/?path=https://huggingface.co/datasets/xiaohk/x-datasets/resolve/main/health-bench-hard-20250508.jsonl">💬 Harmony Chat Example</a></td>
-     <td><a href="https://openai.github.io/euphony/?path=https://huggingface.co/datasets/victor/codex-sample-session/resolve/main/codex-session-hi-2026-03-16.jsonl">🤖 Codex Session Example</a></td>
+     <td><a href="https://openai.github.io/euphony/?path=https%3A%2F%2Fopenai.github.io%2Feuphony%2Fexamples%2Fcodex-session-demo.jsonl">🤖 Codex Session Example</a></td>
+     <td><a href="https://openai.github.io/euphony/sessions.html?demo=1">🔎 Sessions Browser Demo</a></td>
   </tr>
 </table>
 
@@ -52,15 +53,6 @@ There are two ways you can use Euphony.
 The main viewer lets you load JSON or JSONL data and inspect rendered Harmony
 conversations or Codex sessions in one place.
 
-<p align="center">
-  <img
-    src="./public/readme-euphony-index-screenshot.png"
-    alt="Euphony viewer page showing the main toolbar, URL loading controls, and a rendered Codex session."
-    width="940"
-  />
-</p>
-<p align="center"><em>Main Euphony viewer rendering a local Codex session from the URL loader.</em></p>
-
 1. Load data from one of the supported sources:
    1. Paste JSON or JSONL from the clipboard
    2. Choose a local `.json` or `.jsonl` file
@@ -78,15 +70,6 @@ search surface for Codex activity.
 
 When you run the local backend, Euphony also exposes this sessions page at
 `/sessions.html`.
-
-<p align="center">
-  <img
-    src="./public/readme-codex-sessions-screenshot.png"
-    alt="Codex Sessions page showing local session filters, full-text search controls, and the Open Euphony Viewer action."
-    width="1204"
-  />
-</p>
-<p align="center"><em>Codex Sessions page for browsing, filtering, and opening local session logs.</em></p>
 
 The sessions page can:
 

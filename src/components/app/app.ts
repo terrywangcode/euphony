@@ -2313,6 +2313,11 @@ export class EuphonyApp extends LitElement {
           <a class="header-link header-link-sessions" href="./sessions.html"
             >Sessions</a
           >
+          <a
+            class="header-link header-link-sessions-demo"
+            href="./sessions.html?demo=1"
+            >Sessions demo</a
+          >
           <input
             id="local-file-input"
             type="file"
