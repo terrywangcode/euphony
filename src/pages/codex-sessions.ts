@@ -114,6 +114,18 @@ export class EuphonyCodexSessionsPage extends LitElement {
     return this.appliedSearchQuery.trim() !== '';
   }
 
+  private get hasAppliedFieldFilters() {
+    return (
+      this.appliedFirstPromptFilter.trim() !== '' ||
+      this.appliedLastPromptFilter.trim() !== '' ||
+      this.appliedResponseFilter.trim() !== ''
+    );
+  }
+
+  private get isFilteringSessions() {
+    return this.hasAppliedFieldFilters || this.hasAppliedSearchQuery;
+  }
+
   private get isDemoMode() {
     return new URLSearchParams(window.location.search).get(DEMO_QUERY_PARAM) === '1';
   }
@@ -434,6 +446,31 @@ export class EuphonyCodexSessionsPage extends LitElement {
     void this.loadSessions();
   }
 
+  private get loadingStatusTitle() {
+    return this.isFilteringSessions ? 'Filtering sessions' : 'Loading sessions';
+  }
+
+  private get loadingStatusBody() {
+    return this.isFilteringSessions
+      ? 'The server is scanning Codex session files for your current filters.'
+      : 'Reading Codex session metadata from your local machine.';
+  }
+
+  private renderLoadingStatus() {
+    return html`
+      <section class="status-card loading-card" aria-live="polite">
+        <div class="loading-status-row">
+          <div>
+            <div class="status-title loading-title">
+              ${this.loadingStatusTitle}<span class="loading-dots" aria-hidden="true"></span>
+            </div>
+            <div class="status-body">${this.loadingStatusBody}</div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
   render() {
     return html`
       <div class="page-shell">
@@ -467,7 +504,7 @@ export class EuphonyCodexSessionsPage extends LitElement {
             </div>
           </header>
 
-          <section class="toolbar-card">
+          <section class="toolbar-card" aria-busy=${this.isLoading ? 'true' : 'false'}>
             <form class="filters" @submit=${(event: Event) => this.applyFilters(event)}>
               <label class="filter-field">
                 <span>Filter first prompt</span>
@@ -506,8 +543,9 @@ export class EuphonyCodexSessionsPage extends LitElement {
               </label>
 
               <div class="results-note field-filter-note">
-                Field filters only search their own visible card fields and
-                always use exact keyword matching.
+                Prompt filters search their visible card fields; the last
+                response filter searches the full final assistant response.
+                Field filters always use exact keyword matching.
               </div>
 
               <div class="search-row">
@@ -542,8 +580,12 @@ export class EuphonyCodexSessionsPage extends LitElement {
                 </label>
 
                 <div class="filter-actions">
-                  <button class="action-button primary-button" type="submit">
-                    Apply filters
+                  <button
+                    class="action-button primary-button"
+                    type="submit"
+                    ?disabled=${this.isLoading}
+                  >
+                    ${this.isLoading ? this.loadingStatusTitle : 'Apply filters'}
                   </button>
                   <button
                     class="action-button secondary-button"
@@ -573,8 +615,12 @@ export class EuphonyCodexSessionsPage extends LitElement {
               </div>
 
               <div class="filter-actions mobile-filter-actions">
-                <button class="action-button primary-button" type="submit">
-                  Apply filters
+                <button
+                  class="action-button primary-button"
+                  type="submit"
+                  ?disabled=${this.isLoading}
+                >
+                  ${this.isLoading ? this.loadingStatusTitle : 'Apply filters'}
                 </button>
                 <button
                   class="action-button secondary-button"
@@ -602,14 +648,7 @@ export class EuphonyCodexSessionsPage extends LitElement {
           </section>
 
           ${this.isLoading
-            ? html`
-                <section class="status-card">
-                  <div class="status-title">Loading sessions</div>
-                  <div class="status-body">
-                    Reading Codex session metadata from your local machine.
-                  </div>
-                </section>
-              `
+            ? this.renderLoadingStatus()
             : ''}
 
           ${!this.isLoading && this.errorMessage

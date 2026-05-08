@@ -181,6 +181,11 @@ class CodexSessionSearchDocument:
     # sessions page can stay lightweight while the index still sees the whole
     # conversation text emitted by Codex.
     summary: CodexSessionSummary
+    # `summary.last_response` is intentionally a short card preview. Keep the
+    # complete final assistant response separately so the "Filter last response"
+    # field can search what the label promises without sending large response
+    # bodies to the browser.
+    full_last_response: str
     full_user_text: str
     full_assistant_text: str
 
@@ -472,6 +477,7 @@ def _extract_codex_session_document(
     last_prompt_time: Optional[str] = None
     last_response: Optional[str] = None
     last_response_time: Optional[str] = None
+    full_last_response: Optional[str] = None
     full_user_text_parts: list[str] = []
     full_assistant_text_parts: list[str] = []
 
@@ -537,6 +543,7 @@ def _extract_codex_session_document(
                             normalized_response = _normalize_prompt_text(payload_message)
                             if normalized_response:
                                 last_response = _build_preview_text(normalized_response)
+                                full_last_response = normalized_response
                                 if include_full_text:
                                     full_assistant_text_parts.append(normalized_response)
                         if isinstance(event_timestamp, str):
@@ -553,17 +560,15 @@ def _extract_codex_session_document(
                     payload_type == "message"
                     and payload_role == "assistant"
                 ):
-                    assistant_response = _extract_assistant_response_from_response_item(
-                        payload
-                    )
-                    if assistant_response:
-                        last_response = assistant_response
-                    if include_full_text:
-                        full_assistant_response = (
-                            _extract_assistant_response_from_response_item(
-                                payload, preview_length=None
-                            )
+                    full_assistant_response = (
+                        _extract_assistant_response_from_response_item(
+                            payload, preview_length=None
                         )
+                    )
+                    if full_assistant_response:
+                        last_response = _build_preview_text(full_assistant_response)
+                        full_last_response = full_assistant_response
+                    if include_full_text:
                         if full_assistant_response:
                             full_assistant_text_parts.append(full_assistant_response)
                     if isinstance(event_timestamp, str):
@@ -604,6 +609,7 @@ def _extract_codex_session_document(
             last_response=last_response,
             last_response_time=last_response_time,
         ),
+        full_last_response=full_last_response or "",
         full_user_text="\n".join(full_user_text_parts),
         full_assistant_text="\n".join(full_assistant_text_parts),
     )
@@ -702,6 +708,28 @@ def _filter_summaries_by_fuzzy_search(
         reverse=True,
     )
     return [summary for _, _, summary in scored_summaries]
+
+
+def _session_matches_response_filter(
+    summary: CodexSessionSummary, normalized_response_filter: str
+) -> bool:
+    # Keep the preview check as the fast path because most visible-card filters
+    # match there. When the preview misses, parse only that session file again
+    # and inspect the complete final assistant response; this fixes cases where
+    # a keyword appears after the 280-character card preview cutoff.
+    if normalized_response_filter in (summary.last_response or "").casefold():
+        return True
+
+    try:
+        session_file = _resolve_codex_session_path(summary.relative_path)
+    except HTTPException:
+        return False
+
+    document = _build_codex_session_search_document(session_file)
+    if document is None:
+        return False
+
+    return normalized_response_filter in document.full_last_response.casefold()
 
 
 def _open_codex_session_search_index() -> sqlite3.Connection:
@@ -1190,12 +1218,10 @@ async def get_codex_sessions(
             if normalized_last_filter in (summary.last_prompt or "").casefold()
         ]
     if normalized_response_filter:
-        # Filter against the cached preview text so response searching stays
-        # fast even when the sessions directory contains many large JSONL logs.
         filtered_summaries = [
             summary
             for summary in filtered_summaries
-            if normalized_response_filter in (summary.last_response or "").casefold()
+            if _session_matches_response_filter(summary, normalized_response_filter)
         ]
     if normalized_search_query:
         if normalized_search_mode == "exact":

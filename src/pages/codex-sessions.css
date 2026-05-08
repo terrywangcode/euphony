@@ -168,6 +168,12 @@
   background: var(--page-hover-surface);
 }
 
+.action-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
 .toolbar-card,
 .status-card,
 .pagination-row {
@@ -321,6 +327,48 @@
 
 .status-body {
   margin-top: 6px;
+}
+
+.loading-card {
+  overflow: hidden;
+}
+
+.loading-status-row {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.loading-title {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.loading-dots::after {
+  content: '';
+  display: inline-block;
+  width: 1.6em;
+  text-align: left;
+  animation: loading-dots 1.1s steps(4, end) infinite;
+}
+
+@keyframes loading-dots {
+  0% {
+    content: '';
+  }
+
+  25% {
+    content: '.';
+  }
+
+  50% {
+    content: '..';
+  }
+
+  75%,
+  100% {
+    content: '...';
+  }
 }
 
 .error-card {

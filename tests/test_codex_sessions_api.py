@@ -78,11 +78,18 @@ def test_codex_sessions_endpoints_list_filter_and_serve_file(
             },
             {
                 "timestamp": "2026-04-23T09:06:00Z",
-                "type": "event_msg",
+                "type": "response_item",
                 "payload": {
-                    "type": "agent_message",
-                    "message": "The dashboard patch is ready. "
-                    + ("A" * 400),
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": "The dashboard patch is ready. "
+                            + ("A" * 400)
+                            + " BERT calibration notes appear after the card preview.",
+                        }
+                    ],
                 },
             },
         ],
@@ -205,6 +212,17 @@ def test_codex_sessions_endpoints_list_filter_and_serve_file(
     response_filtered_payload = response_filtered_response.json()
     assert response_filtered_payload["matchedCount"] == 1
     assert response_filtered_payload["data"][0]["session_id"] == "session-newer"
+
+    long_response_filtered_response = client.get(
+        "/codex-sessions/",
+        params={"responseFilter": "BERT"},
+    )
+    assert long_response_filtered_response.status_code == 200
+    long_response_filtered_payload = long_response_filtered_response.json()
+    assert long_response_filtered_payload["matchedCount"] == 1
+    long_response_match = long_response_filtered_payload["data"][0]
+    assert long_response_match["session_id"] == "session-older"
+    assert "BERT" not in long_response_match["last_response"]
 
     exact_search_response = client.get(
         "/codex-sessions/",
