@@ -37,11 +37,13 @@ export interface Author {
 export type MessageContent =
   | TextMessageContent
   | CodeMessageContent
+  | CompactMessageContent
   | SystemContentMessageContent
   | DeveloperContentMessageContent;
 
 export const EUPHONY_MESSAGE_CONTENT_TYPES = [
   'code',
+  'compact',
   'developer',
   'system',
   'text'
@@ -58,6 +60,11 @@ export interface CodeMessageContent {
   content_type: 'code';
   text: string;
   language?: string | null;
+}
+
+export interface CompactMessageContent {
+  content_type: 'compact';
+  text: string;
 }
 
 export type ReasoningEffort = 'Low' | 'Medium' | 'High';
@@ -105,6 +112,13 @@ export const getContentTypeFromContent = (
     'text' in content[0]
   ) {
     return 'code';
+  }
+  if (
+    'content_type' in content[0] &&
+    content[0].content_type === 'compact' &&
+    'text' in content[0]
+  ) {
+    return 'compact';
   }
   if ('text' in content[0]) {
     return 'text';

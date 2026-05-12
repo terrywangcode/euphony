@@ -57,9 +57,9 @@ export class EuphonyMessageText extends LitElement {
       // Validate the message is indeed a text message
       if (this.message) {
         const type = getContentTypeFromContent(this.message.content);
-        if (type !== 'text') {
+        if (type !== 'text' && type !== 'compact') {
           throw new Error(
-            `Invalid message type, expect text, but got: ${type}`
+            `Invalid message type, expect text or compact, but got: ${type}`
           );
         }
       }

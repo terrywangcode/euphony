@@ -21,6 +21,7 @@ interface CodexResponseItemPayload {
   summary?: Record<string, unknown>[];
   message?: string;
   text?: string;
+  replacement_history?: unknown;
 }
 
 export interface CodexSessionParseResult {
@@ -195,6 +196,30 @@ const formatMaybeJSON = (value: string): string => {
   return parsed === null ? value : formatJSON(parsed);
 };
 
+const formatCompactedEventText = (
+  payload: CodexResponseItemPayload
+): string => {
+  const sections = ['Context compacted'];
+  const message = typeof payload.message === 'string' ? payload.message : '';
+  if (message.trim().length > 0) {
+    sections.push(`Summary:\n${message}`);
+  }
+
+  if (payload.replacement_history !== undefined) {
+    const replacementHistory = payload.replacement_history;
+    const itemCount = Array.isArray(replacementHistory)
+      ? replacementHistory.length
+      : 'unknown';
+    sections.push(
+      `Replacement history (${itemCount} items):\n${formatJSON(
+        replacementHistory
+      )}`
+    );
+  }
+
+  return sections.join('\n\n');
+};
+
 const getExecCommandFromArguments = (value: unknown): string | null => {
   if (isRecord(value) && typeof value.cmd === 'string') {
     return value.cmd;
@@ -256,6 +281,33 @@ const buildTextMessage = ({
   metadata,
   recipient,
   channel
+});
+
+const buildCompactMessage = ({
+  id,
+  text,
+  timestamp,
+  metadata,
+  name
+}: {
+  id: string;
+  text: string;
+  timestamp: number | null;
+  metadata: Record<string, unknown>;
+  name?: string;
+}): Message => ({
+  id,
+  role: Role.System,
+  name,
+  content: [
+    {
+      content_type: 'compact',
+      text
+    }
+  ],
+  create_time: timestamp ?? undefined,
+  metadata,
+  channel: 'compact'
 });
 
 const buildDeveloperMessage = ({
@@ -468,6 +520,20 @@ export const parseCodexSession = (
       codex_function_name:
         typeof payload.name === 'string' ? payload.name : null
     };
+
+    if (eventType === 'compacted') {
+      messages.push(
+        buildCompactMessage({
+          id: `${sessionId}-compacted-${index}`,
+          text: formatCompactedEventText(payload),
+          timestamp,
+          metadata,
+          name: 'codex'
+        })
+      );
+      messageCount += 1;
+      continue;
+    }
 
     if (eventType === 'response_item') {
       const payloadType = payload.type ?? 'unknown';
@@ -724,10 +790,9 @@ export const parseCodexSession = (
 
       if (payloadType === 'context_compacted') {
         messages.push(
-          buildTextMessage({
+          buildCompactMessage({
             id: `${sessionId}-compacted-${index}`,
-            role: Role.System,
-            text: 'Context compacted',
+            text: formatCompactedEventText(payload),
             timestamp,
             metadata,
             name: 'codex'

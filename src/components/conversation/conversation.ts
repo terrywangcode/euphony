@@ -2109,7 +2109,8 @@ export class EuphonyConversation extends LitElement {
     let template = html``;
     const contentType = tryGetContentTypeFromContent(message.content);
     switch (contentType) {
-      case 'text': {
+      case 'text':
+      case 'compact': {
         template = html`
           <euphony-message-text
             .message=${message}
